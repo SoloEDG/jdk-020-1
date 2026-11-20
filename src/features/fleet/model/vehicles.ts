@@ -1,4 +1,4 @@
-import type { Vehicle, ServiceKind } from "../../../shared/types";
+import type { Vehicle, ServiceKind, Shift } from "../../../shared/types";
 export const depot = { x: 850, y: 510 };
 export function initialVehicles(): Vehicle[] {
   const result: Vehicle[] = [];
@@ -6,6 +6,7 @@ export function initialVehicles(): Vehicle[] {
     ["fuel", "FL"],
     ["baggage", "BG"],
     ["clean", "CL"],
+    ["deice", "DI"],
   ] as [ServiceKind, string][])
     for (let i = 1; i <= 2; i++) {
       const p = { x: 810 + (i - 1) * 36, y: 430 + result.length * 15 };
@@ -22,9 +23,6 @@ export function initialVehicles(): Vehicle[] {
     }
   return result;
 }
-export function selectVehicle(
-  state: import("../../../shared/types").Shift,
-  id: string,
-) {
+export function selectVehicle(state: Shift, id: string): Shift {
   return { ...state, selectedVehicleId: id };
 }

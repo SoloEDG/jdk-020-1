@@ -1,1 +1,27 @@
-{"name":"apron-07","version":"1.0.0","private":true,"type":"module","scripts":{"dev":"vite --host 0.0.0.0","typecheck":"tsc --noEmit","build":"tsc --noEmit && vite build","preview":"vite preview --host 0.0.0.0"},"dependencies":{"@fontsource/barlow-condensed":"^5.3.0","lucide-react":"^0.468.0","react":"^19.0.0","react-dom":"^19.0.0"},"devDependencies":{"@types/react":"^19.0.0","@types/react-dom":"^19.0.0","@vitejs/plugin-react":"^4.4.0","tsx":"^4.19.0","typescript":"~5.8.3","vite":"^6.3.0"}}
+{
+  "name": "apron-07",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "check": "tsx checks/sim-check.ts && tsx checks/edge-check.ts && tsx checks/decision-check.ts && tsx checks/flow-check.ts && tsx checks/evacuation-check.ts && tsx checks/smoke.ts && tsx checks/ssr-check.tsx"
+  },
+  "dependencies": {
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.4.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.0"
+  }
+}

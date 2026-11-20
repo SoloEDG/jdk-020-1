@@ -9,13 +9,23 @@ export function routePosition(v: Vehicle): Point {
     y: v.origin.y + (v.target.y - v.origin.y) * t,
   };
 }
-export const vehicleLabels = {
+export const vehicleLabels: Record<Vehicle["kind"], string> = {
   fuel: "加油车",
   baggage: "行李车",
   clean: "清洁车",
+  deice: "除冰车",
 };
-export const vehicleColors = {
+export const vehicleColors: Record<Vehicle["kind"], string> = {
   fuel: "#e5a84e",
   baggage: "#529e9b",
   clean: "#7e8eb1",
+  deice: "#b06a6a",
+};
+export const vehicleStatusLabels: Record<Vehicle["status"], string> = {
+  idle: "待命",
+  travel: "前往机位",
+  working: "作业中",
+  returning: "返回车场",
+  evading: "驶离影响区",
+  sheltered: "避险待命",
 };

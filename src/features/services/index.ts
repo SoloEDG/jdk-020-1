@@ -1,4 +1,9 @@
-export { initialServices, serviceCatalog } from "./model/catalog";
+export {
+  initialServices,
+  serviceCatalog,
+  serviceDuration,
+  coreKinds,
+} from "./model/catalog";
 export { dispatchService } from "./model/dispatch";
 export { advanceServices } from "./model/progress";
 export { serviceBlockReason } from "./lib/eligibility";

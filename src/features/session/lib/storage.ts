@@ -1,6 +1,8 @@
 import type { Shift } from "../../../shared/types";
 import { validShift } from "./validation";
-const key = "apron07-shift-v1";
+const key = "apron07-shift-v2";
+/** Old version keys are never read, so a v1 document cannot masquerade as v2. */
+export const saveKey = key;
 export function saveShift(state: Shift): void {
   localStorage.setItem(key, JSON.stringify(state));
 }

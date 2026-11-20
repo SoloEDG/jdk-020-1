@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FlightBoard, assignStand, selectFlight } from "../features/flights";
+import { WeatherPanel, weatherHeadline } from "../features/weather";
 import { ApronMap, selectStand } from "../features/apron";
 import { FleetPanel, selectVehicle } from "../features/fleet";
 import { dispatchService } from "../features/services";
@@ -54,12 +55,13 @@ export function App() {
               掌控机坪的每一分钟<span>。</span>
             </h1>
           </div>
-          <div className="field-badge">
+          <div className={`field-badge ${state.weather.some((w) => w.status === "active") ? "alert" : ""}`}>
             <span className="live-dot" />
-            机场运行正常 <b>SHA / ZSSS</b>
+            {weatherHeadline(state)} <b>SHA / ZSSS</b>
           </div>
         </div>
         <ScoreStrip state={state} />
+        <WeatherPanel state={state} />
         <div className="workspace">
           <FlightBoard
             state={state}
@@ -90,7 +92,7 @@ export function App() {
         </div>
         <footer>
           <span>APRON 07 · 地面有序，天空自由。</span>
-          <span>操作提示：选择航班 → 分配机位 → 派遣车辆 → 批准离港</span>
+          <span>操作提示：看预报 → 分配机位 → 保障/除冰 → 冒险或等待放行</span>
           <span>
             <i className="live-dot" />
             {state.paused ? "SIMULATION PAUSED" : "SIMULATION LIVE"}

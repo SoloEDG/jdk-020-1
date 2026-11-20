@@ -1,6 +1,8 @@
 import type { Shift } from "../../../shared/types";
 import { occupiedFlight, compatibleStand } from "../lib/geometry";
 import { Aircraft } from "./Aircraft";
+import { activeWeather, standAvailability, stormCenter } from "../../weather";
+import { vehicleStatusLabels } from "../../fleet";
 interface Props {
   state: Shift;
   onStand: (id: string) => void;
@@ -16,7 +18,18 @@ export function ApronMap({ state, onStand, onFlight }: Props) {
           实时机坪 <span className="toolbar-en">APRON OVERVIEW</span>
         </div>
         <div className="weather">
-          ↗ 240° / 06 KT <span>☀ 24°C</span>
+          ↗ 240° / 06 KT{" "}
+          <span>
+            {activeWeather(state).some((w) => w.kind === "storm")
+              ? "⛈ 雷雨"
+              : activeWeather(state).some((w) => w.kind === "icing")
+                ? "❄ 0°C 结冰"
+                : state.weather.some(
+                      (w) => w.forecastIssued && w.status === "forecast",
+                    )
+                  ? "⚠ 天气预警"
+                  : "☀ 24°C"}
+          </span>
         </div>
       </div>
       <svg
@@ -120,13 +133,14 @@ export function ApronMap({ state, onStand, onFlight }: Props) {
           const f = occupiedFlight(state, stand.id),
             active = state.selectedStandId === stand.id;
           const compatible = selected && compatibleStand(stand, selected);
+          const weather = standAvailability(state, stand);
           return (
             <g
               key={stand.id}
-              className="stand-group"
+              className={`stand-group ${!weather.available ? "stand-blocked" : ""}`}
               role="button"
               tabIndex={0}
-              aria-label={`机位 ${stand.id}`}
+              aria-label={`机位 ${stand.id}${weather.available ? "" : `（${weather.reason}）`}`}
               data-testid={`stand-${stand.id}`}
               onClick={() => {
                 onStand(stand.id);
@@ -199,6 +213,16 @@ export function ApronMap({ state, onStand, onFlight }: Props) {
                   {f.id}
                 </text>
               )}
+              {!weather.available && (
+                <text
+                  x={stand.x}
+                  y={stand.y + 141}
+                  textAnchor="middle"
+                  className="stand-weather-label"
+                >
+                  {weather.reason}
+                </text>
+              )}
               {!f && selected?.status === "incoming" && compatible && (
                 <circle
                   cx={stand.x + 67}
@@ -230,11 +254,45 @@ export function ApronMap({ state, onStand, onFlight }: Props) {
             strokeWidth="1"
           />
         ))}
+        {activeWeather(state, "storm").map((w) => {
+          const centre = stormCenter(w, state.time);
+          if (!centre) return null;
+          return (
+            <g key={w.id} className="storm-cell" data-testid="storm-cell">
+              <circle
+                cx={centre.x}
+                cy={centre.y}
+                r={w.radius}
+                fill="#d9a05d"
+                fillOpacity=".14"
+                stroke="#b8814c"
+                strokeDasharray="7 6"
+                strokeWidth="1.5"
+                className="storm-core"
+              />
+              <circle
+                cx={centre.x}
+                cy={centre.y}
+                r={w.radius * 0.55}
+                fill="#c98a4b"
+                fillOpacity=".12"
+              />
+              <text
+                x={centre.x}
+                y={centre.y - w.radius - 8}
+                textAnchor="middle"
+                className="storm-label"
+              >
+                ⛈ {w.title} · 半径 {w.radius}m
+              </text>
+            </g>
+          );
+        })}
         {state.vehicles.map((v) => (
           <g
             key={v.id}
             transform={`translate(${v.position.x} ${v.position.y})`}
-            className="vehicle-marker"
+            className={`vehicle-marker ${v.status === "evading" ? "evading" : ""}`}
           >
             <rect
               x="-10"
@@ -263,6 +321,25 @@ export function ApronMap({ state, onStand, onFlight }: Props) {
                 strokeOpacity=".5"
                 className="moving-ring"
               />
+            )}
+            {v.status === "evading" && (
+              <>
+                <line
+                  x1="0"
+                  y1="0"
+                  x2={v.target.x - v.position.x}
+                  y2={v.target.y - v.position.y}
+                  stroke="#b8814c"
+                  strokeWidth="2"
+                  strokeDasharray="6 5"
+                />
+                <text x="0" y="-14" textAnchor="middle" className="evade-label">
+                  ↯ 避险 · {v.safePointName}
+                </text>
+              </>
+            )}
+            {(v.status === "sheltered" || v.status === "evading") && (
+              <title>{`${v.id} · ${vehicleStatusLabels[v.status]} · ${v.avoidReason ?? ""}`}</title>
             )}
           </g>
         ))}
@@ -294,6 +371,10 @@ export function ApronMap({ state, onStand, onFlight }: Props) {
         <span>
           <i className="legend-selected" />
           当前选择
+        </span>
+        <span className="storm-legend">
+          <i />
+          雷雨影响区
         </span>
         <span className="map-scale">0 ━━━━━ 100 m</span>
       </div>

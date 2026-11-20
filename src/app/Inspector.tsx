@@ -1,9 +1,16 @@
 import type { ServiceKind, Shift } from "../shared/types";
-import { clockLabel } from "../shared/document";
+import { clockExact, clockLabel } from "../shared/document";
 import { flightReady, departFlight, statusLabels } from "../features/flights";
 import { StandPicker } from "../features/apron";
 import { ServicePanel } from "../features/services";
 import { EventLog } from "../features/session";
+import {
+  ReleaseDecision,
+  releaseBlockReason,
+  releaseOutlook,
+  deiceProtection,
+  isIcingActive,
+} from "../features/weather";
 export function Inspector({
   state,
   onChange,
@@ -18,6 +25,13 @@ export function Inspector({
   onDispatch: (k: ServiceKind, v: string) => void;
 }) {
   const f = state.flights.find((x) => x.id === state.selectedFlightId)!;
+  const block =
+    f.status === "parked" ? releaseBlockReason(state, f) : undefined;
+  const outlook = releaseOutlook(state, f);
+  const choicePending =
+    outlook.hasDecision && (!!outlook.risk || !!outlook.wait);
+  const protection = deiceProtection(state, f);
+  const icing = isIcingActive(state);
   return (
     <aside className="inspector">
       <div className="inspector-heading">
@@ -49,6 +63,20 @@ export function Inspector({
           {statusLabels[f.status]}
         </span>
       </div>
+      {(f.status === "parked" || f.status === "departing") && icing && (
+        <div
+          className={`deice-summary ${protection.valid ? "valid" : "expired"}`}
+        >
+          <span>除冰保护</span>
+          <b>
+            {protection.until === undefined
+              ? "尚未除冰"
+              : protection.valid
+                ? `有效至 ${clockExact(protection.until)}`
+                : `已过期 ${clockExact(protection.until)}`}
+          </b>
+        </div>
+      )}
       <StandPicker state={state} onAssign={onAssign} onSelect={onStand} />
       {f.status !== "incoming" && f.status !== "scheduled" && (
         <div className="stand-occupancy">
@@ -66,17 +94,31 @@ export function Inspector({
         </div>
       )}
       <ServicePanel state={state} onDispatch={onDispatch} />
+      <ReleaseDecision
+        state={state}
+        onChange={(updater) => onChange(updater(state))}
+      />
       <button
         className="primary depart-button"
         data-testid="depart"
-        disabled={!flightReady(state, f.id) || f.status !== "parked"}
+        disabled={
+          !flightReady(state, f.id) ||
+          f.status !== "parked" ||
+          !!block ||
+          choicePending
+        }
+        title={block ?? (choicePending ? "请在上方选择冒险或等待" : undefined)}
         onClick={() => onChange(departFlight(state, f.id))}
       >
         {f.status === "departed"
           ? "已完成离港"
           : f.status === "departing"
             ? "飞机正在推出…"
-            : "批准推出离港"}{" "}
+            : block
+              ? block
+              : choicePending
+                ? "请选择放行方式"
+                : "批准推出离港"}{" "}
         <span>→</span>
       </button>
       <EventLog state={state} />

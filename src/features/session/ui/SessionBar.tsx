@@ -38,7 +38,7 @@ export function SessionBar({
         </div>
       </div>
       <div className="shift-title">
-        <span className="live-dot" />
+        <span className={`live-dot ${state.weather.some((w) => w.status === "active") ? "warning" : ""}`} />
         早班值守<span>SHIFT 01 · EAST FIELD</span>
       </div>
       <div className="clock">

@@ -1,10 +1,17 @@
 import type { Flight, Shift } from "../../../shared/types";
+import { coreKinds } from "../../services";
 export function flightReady(state: Shift, id: string): boolean {
-  const tasks = state.services.filter((t) => t.flightId === id);
-  return tasks.length === 3 && tasks.every((t) => t.status === "done");
+  const core = state.services.filter(
+    (t) => t.flightId === id && coreKinds.includes(t.kind),
+  );
+  return (
+    core.length === coreKinds.length && core.every((t) => t.status === "done")
+  );
 }
 export function turnaroundProgress(state: Shift, id: string): number {
-  const tasks = state.services.filter((t) => t.flightId === id);
+  const tasks = state.services.filter(
+    (t) => t.flightId === id && coreKinds.includes(t.kind),
+  );
   return tasks.length
     ? Math.round(tasks.reduce((n, t) => n + t.progress, 0) / tasks.length)
     : 0;

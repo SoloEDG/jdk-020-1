@@ -1,7 +1,8 @@
 import type { Shift, ServiceKind } from "../../../shared/types";
 import { copyShift, record } from "../../../shared/document";
 import { serviceBlockReason } from "../lib/eligibility";
-import { serviceCatalog } from "./catalog";
+import { serviceCatalog, serviceDuration } from "./catalog";
+
 export function dispatchService(
   state: Shift,
   flightId: string,
@@ -27,13 +28,25 @@ export function dispatchService(
     record(s, reason ?? "车辆不可用或车辆类型不匹配", "warning");
     return s;
   }
+  // Re-dispatch keeps any retained progress (interrupted work). A completed
+  // but expired de-icing task starts over, because its protection is gone.
+  if (task.status === "done") {
+    task.progress = 0;
+    task.completedAt = undefined;
+    task.protectionUntil = undefined;
+    task.expiryNotified = false;
+  }
+  if (kind === "deice" && f)
+    task.duration = serviceDuration(kind, f, stand.deice);
   task.status = "travel";
   task.vehicleId = v.id;
+  task.interruptReason = undefined;
   v.status = "travel";
   v.serviceId = task.id;
   v.origin = { ...v.position };
   v.target = { x: stand.x + 42, y: stand.y + 22 };
   v.progress = 0;
+  // Icing slows movement dynamically in the fleet step; do not bake it in.
   v.tripDuration =
     5 + Math.hypot(v.target.x - v.origin.x, v.target.y - v.origin.y) / 50;
   record(s, `${v.id} → ${flightId} · ${serviceCatalog[kind].label}`);

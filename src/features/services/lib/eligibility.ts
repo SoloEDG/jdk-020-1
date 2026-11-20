@@ -1,14 +1,32 @@
-import type { Shift, ServiceKind } from "../../../shared/types";
+import type { ServiceKind, Shift } from "../../../shared/types";
 import { serviceCatalog } from "../model/catalog";
+import { isIcingActive, standStormEvent } from "../../weather";
+
 export function serviceBlockReason(
   s: Shift,
   flightId: string,
   kind: ServiceKind,
 ): string | undefined {
   const f = s.flights.find((x) => x.id === flightId),
-    task = s.services.find((x) => x.flightId === flightId && x.kind === kind);
+    task = s.services.find((x) => x.flightId === flightId && x.kind === kind),
+    stand = s.stands.find((x) => x.id === f?.standId);
   if (!f || f.status !== "parked") return "请先分配机位";
-  if (!task || task.status !== "pending") return "任务已派遣";
+  if (kind === "deice" && task?.status === "done") {
+    if ((task.protectionUntil ?? 0) > s.time) return "除冰保护仍然有效";
+    return undefined;
+  }
+  if (!task || (task.status !== "pending" && task.status !== "interrupted"))
+    return "任务已派遣";
+  if (stand && standStormEvent(s, stand))
+    return "雷雨覆盖机位，保障已暂停";
+  if (kind === "deice") {
+    const icing = isIcingActive(s);
+    const relevant = s.weather.some(
+      (w) => w.kind === "icing" && w.status !== "cleared" && w.forecastIssued,
+    );
+    if (!icing && !relevant)
+      return "当前无结冰预报，无需除冰";
+  }
   if (
     serviceCatalog[kind].requires.some(
       (k) =>

@@ -1,5 +1,9 @@
 import type { Shift } from "../../../shared/types";
-import { vehicleLabels, vehicleColors } from "../lib/routing";
+import {
+  vehicleLabels,
+  vehicleColors,
+  vehicleStatusLabels,
+} from "../lib/routing";
 export function FleetPanel({
   state,
   onSelect,
@@ -7,12 +11,6 @@ export function FleetPanel({
   state: Shift;
   onSelect: (id: string) => void;
 }) {
-  const labels = {
-    idle: "待命",
-    travel: "前往机位",
-    working: "作业中",
-    returning: "返回车场",
-  };
   return (
     <section className="fleet-panel">
       <div className="section-heading">
@@ -21,7 +19,8 @@ export function FleetPanel({
           <h2>
             地勤车队{" "}
             <small>
-              {state.vehicles.filter((v) => v.status === "idle").length} / 6
+              {state.vehicles.filter((v) => v.status === "idle").length} /{" "}
+              {state.vehicles.length}
               待命
             </small>
           </h2>
@@ -46,9 +45,18 @@ export function FleetPanel({
               <strong>{v.id}</strong>
               <span>{vehicleLabels[v.kind]}</span>
             </div>
-            <em className={v.status === "idle" ? "idle" : ""}>
+            <em
+              className={
+                v.status === "idle"
+                  ? "idle"
+                  : v.status === "evading" || v.status === "sheltered"
+                    ? "evacuating"
+                    : ""
+              }
+              title={v.avoidReason ?? v.safePointName}
+            >
               <i />
-              {labels[v.status]}
+              {vehicleStatusLabels[v.status]}
             </em>
           </button>
         ))}
